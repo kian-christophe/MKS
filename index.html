@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Tickets GuideStar III</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..700&family=Geist+Mono:wght@400;500&family=Schibsted+Grotesk:wght@400;500;600;700&display=swap">
+<style>
+/* Concept : même univers que le simulateur GuideStar Gen3. Papier chaud à points, encre presque noire,
+   un seul accent orange, titre très léger en Bricolage Grotesque, repères en Geist Mono.
+   À gauche : la demande (carte pierre) et la réponse de l'équipe (panneau orange). À droite : la file de tickets. */
+:root{
+  --paper:#F7F5F1; --stone:#EEE9E3; --stone-2:#E4DED6; --line:#D9D1C7; --line-2:#C4BBB0;
+  --ink:#1B170F; --ink-2:#4B4337; --mute:#6B6256; --white:#FFFFFF;
+  --accent:#D96833; --accent-deep:#AE4418; --panel:#EC8752; --accent-soft:rgba(217,104,51,.16);
+  --f-ctrl:#A9C6EC; --f-algo:#9DD5B7; --f-config:#F1CB67; --sev-crit:#B4232A; --sev-err:#C9541F;
+  --shadow-s:0 10px 22px -16px rgba(27,23,15,.5);
+  --font-display:"Bricolage Grotesque","Avenir Next","Segoe UI",system-ui,sans-serif;
+  --font-body:"Schibsted Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"Geist Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
+  --r:14px;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+body{background-color:var(--paper);color:var(--ink);font:15px/1.45 var(--font-body);-webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(circle,rgba(27,23,15,.13) 1px,transparent 1.3px);background-size:22px 22px;
+  padding-block:36px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:26px}
+.eyebrow{font:500 11.5px/1 var(--font-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+h1{margin:14px 0 0;font:300 clamp(46px,8vw,92px)/.9 var(--font-display);letter-spacing:-.055em;text-wrap:balance}
+h1 em{font-style:normal;color:var(--accent)}
+.sub{margin:16px 0 0;color:var(--ink-2);max-width:58ch;font-size:16px}
+.banner{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;background:var(--accent-soft);border-radius:var(--r)}
+.banner p{margin:0;min-width:0;font-weight:500}
+.layout{display:grid;gap:22px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:920px){.layout{grid-template-columns:372px minmax(0,1fr);align-items:start;gap:30px}}
+.side{display:flex;flex-direction:column;gap:20px;min-width:0}
+.card,.panel{border-radius:var(--r);padding:22px;min-width:0}
+.card{background:var(--stone)}
+.panel{background:var(--panel);color:var(--ink)}
+.card h2,.panel h2{margin:0;font:400 26px/1.05 var(--font-display);letter-spacing:-.03em}
+.hint{margin:6px 0 18px;font-size:13.5px;color:var(--ink-2)}
+.panel .hint{color:var(--ink)}
+.panel .eyebrow{color:#5A2A10}
+form{display:flex;flex-direction:column;gap:13px}
+label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600}
+input,select,textarea{font:400 14.5px/1.3 var(--font-body);color:var(--ink);background:var(--white);border:1px solid var(--line-2);border-radius:10px;padding:10px 12px;width:100%;min-width:0}
+.panel input,.panel select,.panel textarea{border-color:transparent}
+textarea{min-height:112px;resize:vertical}
+input.mono,.mono{font-family:var(--font-mono)}
+input::placeholder,textarea::placeholder{color:#8B8176}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:440px){.row2{grid-template-columns:1fr}}
+.auto{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border:1px dashed var(--line-2);border-radius:10px;font-size:13px;color:var(--ink-2)}
+.panel .auto{border-color:rgba(27,23,15,.4);color:var(--ink)}
+.auto b{font:500 13px var(--font-mono);color:var(--ink)}
+.note{margin:0 0 14px;padding:10px 12px;border-radius:10px;background:var(--white);color:var(--ink-2);font-size:13px}
+.err{margin:0;color:var(--sev-crit);font-size:13px;font-weight:600}
+.panel .err{color:#5E0E12}
+button{font:500 14px/1 var(--font-body);cursor:pointer;border-radius:99px;border:1px solid var(--ink);background:transparent;color:var(--ink);height:42px;padding:0 20px;white-space:nowrap}
+button:hover{background:rgba(27,23,15,.07)}
+button.primary{background:var(--ink);color:var(--paper)}
+button.primary:hover{background:#2E281C}
+button.accent{background:var(--accent);border-color:var(--accent);color:var(--ink)}
+button.accent:hover{background:#E07A47}
+button.small{height:32px;padding:0 14px;font-size:13px}
+button:disabled{opacity:.45;cursor:not-allowed}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.tabs{display:inline-flex;flex-wrap:wrap;gap:2px;background:var(--stone);border-radius:99px;padding:3px}
+.tab{height:32px;padding:0 14px;border:0;font-size:13px;display:inline-flex;gap:8px;align-items:center;color:var(--ink-2)}
+.tab[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.tab .n{font:500 11.5px var(--font-mono);opacity:.85}
+.mine{display:flex;flex-direction:row;align-items:center;gap:8px;font-weight:500;color:var(--ink-2);width:auto}
+.mine input{width:auto;accent-color:var(--accent)}
+.list{display:flex;flex-direction:column;gap:12px;padding:0;margin:0;list-style:none}
+.ticket{background:var(--stone);border-radius:var(--r);padding:18px 20px;display:flex;flex-direction:column;gap:11px;min-width:0}
+.ticket.new{box-shadow:inset 0 0 0 2px var(--accent)}
+.thead{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
+.num{font:500 12.5px var(--font-mono);color:var(--mute);letter-spacing:.04em}
+.ttitle{margin:0;font:500 20px/1.15 var(--font-display);letter-spacing:-.02em;flex:1 1 220px;min-width:0;overflow-wrap:anywhere}
+.chip{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 10px;border-radius:99px;font-size:12px;font-weight:600;white-space:nowrap;background:var(--white);color:var(--ink-2)}
+.chip.todo{background:var(--f-config);color:var(--ink)}
+.chip.wip{background:var(--f-ctrl);color:var(--ink)}
+.chip.done{background:var(--f-algo);color:var(--ink)}
+.chip.sev-bloquant{background:var(--sev-crit);color:var(--white)}
+.chip.fresh{background:var(--ink);color:var(--paper)}
+.meta{margin:0;font-size:13px;color:var(--mute);display:flex;flex-wrap:wrap;gap:2px 16px}
+.meta .mono{color:var(--ink);font-size:12.5px}
+.remark{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.fix{background:var(--paper);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.fix h3{margin:0;font:500 11px var(--font-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--accent-deep)}
+.fix p{margin:0;overflow-wrap:anywhere;white-space:pre-wrap}
+.fix .line{font:500 13.5px var(--font-mono)}
+.empty{padding:34px 20px;text-align:center;color:var(--ink-2);border:1px dashed var(--line-2);border-radius:var(--r);background:var(--paper)}
+.empty b{display:block;color:var(--ink);margin-bottom:4px;font:400 22px var(--font-display);letter-spacing:-.02em}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--paper);padding:11px 18px;border-radius:99px;font-size:14px;max-width:calc(100vw - 32px);z-index:5;box-shadow:var(--shadow-s)}
+@media (prefers-reduced-motion:no-preference){.ticket{transition:box-shadow .2s}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">GuideStar Gen3 · Suivi des anomalies</div>
+    <h1>Suivi des <em>anomalies</em></h1>
+    <p class="sub">Indiquez la version que vous utilisez et décrivez le problème. L'équipe répond sur la même page, avec la version qui corrige.</p>
+  </header>
+
+  <div class="banner" id="banner" hidden>
+    <p id="bannerText"></p>
+    <button type="button" class="small" id="bannerBtn">Marquer comme lu</button>
+  </div>
+
+  <main class="layout">
+    <div class="side">
+      <section class="card" aria-labelledby="fh">
+        <h2 id="fh">Nouveau signalement</h2>
+        <p class="hint">Un ticket par problème. La date est ajoutée automatiquement.</p>
+        <p class="note" id="noWrite" hidden></p>
+        <form id="newForm" novalidate>
+          <label for="fTitle">Résumé du problème
+            <input id="fTitle" maxlength="120" placeholder="Une phrase courte" autocomplete="off">
+          </label>
+          <div class="row2">
+            <label for="fVersion">Version utilisée
+              <input id="fVersion" class="mono" maxlength="40" placeholder="ex. V5" list="versions" autocomplete="off">
+              <datalist id="versions"></datalist>
+            </label>
+            <label for="fSev">Gravité
+              <select id="fSev">
+                <option value="bloquant">Bloquant</option>
+                <option value="genant" selected>Gênant</option>
+                <option value="mineur">Mineur</option>
+              </select>
+            </label>
+          </div>
+          <label for="fRemark">Votre remarque
+            <textarea id="fRemark" maxlength="3000" placeholder="Ce que vous faisiez, ce qui s'est passé, ce que vous attendiez."></textarea>
+          </label>
+          <div class="auto"><span>Date du signalement</span><b id="fDate"></b></div>
+          <p class="err" id="fErr" role="alert" hidden></p>
+          <button class="primary" type="submit" id="fSubmit">Envoyer le ticket</button>
+        </form>
+      </section>
+
+      <section class="panel" id="teamPanel" aria-labelledby="th">
+        <div class="eyebrow">Réponse de l'équipe</div>
+        <h2 id="th" style="margin-top:12px">Répondre à un ticket</h2>
+        <p class="hint">Choisissez le ticket, indiquez son état et la version qui le corrige.</p>
+        <form id="teamForm" novalidate>
+          <label for="tTicket">Ticket concerné
+            <select id="tTicket"><option value="">Choisir un ticket</option></select>
+          </label>
+          <div class="row2">
+            <label for="tStatus">État
+              <select id="tStatus">
+                <option value="en_cours">Pris en charge</option>
+                <option value="corrige" selected>Corrigé</option>
+              </select>
+            </label>
+            <label for="tVersion"><span id="tVersionLabel">Version corrigée</span>
+              <input id="tVersion" class="mono" maxlength="40" placeholder="ex. V6" list="versions" autocomplete="off">
+            </label>
+          </div>
+          <label for="tComment">Commentaire
+            <textarea id="tComment" maxlength="3000" placeholder="Cause, correctif appliqué, ce que le client doit faire."></textarea>
+          </label>
+          <div class="auto"><span>Date du traitement</span><b id="tDate"></b></div>
+          <p class="err" id="tErr" role="alert" hidden></p>
+          <div class="actions">
+            <button class="primary" type="submit" id="tSave">Enregistrer le traitement</button>
+            <button type="button" id="tReopen" disabled>Rouvrir</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <section aria-labelledby="lh">
+      <div class="toolbar">
+        <h2 id="lh" class="eyebrow" style="margin:0">Tickets</h2>
+        <label class="mine" for="fMine"><input type="checkbox" id="fMine"> Mes tickets seulement</label>
+      </div>
+      <div class="toolbar"><div class="tabs" id="tabs" role="group" aria-label="Filtrer par état"></div></div>
+      <ul class="list" id="list" aria-live="polite"><li class="empty">Chargement des tickets…</li></ul>
+    </section>
+  </main>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+/* ============================================================
+   CONFIGURATION : collez ici l'URL du script Google (se termine par /exec).
+   Laissez vide pour le mode démonstration (tickets gardés dans ce navigateur seulement).
+   ============================================================ */
+var CONFIG={API_URL:'https://script.google.com/macros/s/AKfycbydU5WhGVJ0uV-ggl_WuVW-b5hQ5NFPQyefcG1DhN_ye6nUv5ePYPIdre4Jv0aMIs3nXg/exec'};
+
+(function(){
+  var SEV={bloquant:'Bloquant',genant:'Gênant',mineur:'Mineur'};
+  var STATUS={todo:'À traiter',en_cours:'Pris en charge',corrige:'Corrigé'};
+  var GLYPH={todo:'○',en_cours:'◐',corrige:'✓'};
+  var SEEN_KEY='gs-tickets-seen',ME_KEY='gs-tickets-me',LOCAL_KEY='gs-tickets-local';
+  var REMOTE=!!CONFIG.API_URL;
+  var st={tickets:[],fixes:{},loaded:false,filter:'all',mine:false,me:{id:null},seen:0,error:'',pick:'',sig:''};
+  var $=function(id){return document.getElementById(id)};
+
+  function el(tag,props){
+    var n=document.createElement(tag);
+    if(props){for(var k in props){
+      if(k==='class')n.className=props[k];
+      else if(k==='text')n.textContent=props[k];
+      else if(k.slice(0,2)==='on')n.addEventListener(k.slice(2),props[k]);
+      else if(props[k]!==false&&props[k]!=null)n.setAttribute(k,props[k]===true?'':props[k]);
+    }}
+    var add=function(c){
+      if(c==null||c===false)return;
+      if(Array.isArray(c)){c.forEach(add);return}
+      n.appendChild(typeof c==='string'?document.createTextNode(c):c);
+    };
+    for(var i=2;i<arguments.length;i++)add(arguments[i]);
+    return n;
+  }
+  function pad(n){return n<10?'0'+n:''+n}
+  function fmtDate(ms){var d=new Date(ms);return pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear()}
+  function fmtDateTime(ms){var d=new Date(ms);return fmtDate(ms)+' '+pad(d.getHours())+':'+pad(d.getMinutes())}
+  var toastT;
+  function toast(msg){var t=$('toast');t.textContent=msg;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(function(){t.hidden=true},3200)}
+  function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+  function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+  function showErr(id,msg){var e=$(id);if(msg){e.textContent=msg;e.hidden=false}else e.hidden=true}
+  function toMs(v){if(!v)return 0;if(typeof v==='number')return v;var t=new Date(v).getTime();return isNaN(t)?0:t}
+
+  /* ---------- identité locale (sert à « Mes tickets » et au bandeau « traité ») ---------- */
+  function meId(){
+    var id=lsGet(ME_KEY);
+    if(!id){id='c'+Math.random().toString(36).slice(2,12)+Date.now().toString(36);lsSet(ME_KEY,id)}
+    return id;
+  }
+
+  /* ---------- accès aux données : Google Sheet (via Apps Script) ou navigateur ---------- */
+  function localRead(){try{return JSON.parse(lsGet(LOCAL_KEY)||'[]')}catch(e){return []}}
+  function localWrite(a){lsSet(LOCAL_KEY,JSON.stringify(a))}
+  async function apiList(){
+    if(!REMOTE)return localRead();
+    var url=CONFIG.API_URL+(CONFIG.API_URL.indexOf('?')<0?'?':'&')+'t='+Date.now();
+    var r=await fetch(url);
+    var j=await r.json();
+    if(j.error)throw new Error(j.error);
+    return j.tickets||[];
+  }
+  async function apiPost(body){
+    if(!REMOTE){
+      var rows=localRead(),now=new Date().toISOString(),row;
+      if(body.action==='add'){
+        rows.push({id:'l'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),createdAt:now,title:body.title,severity:body.severity,version:body.version,remark:body.remark,authorId:body.authorId,status:'todo',fixedVersion:'',comment:'',resolvedAt:''});
+      }else{
+        row=rows.filter(function(r){return r.id===body.id})[0];
+        if(!row)throw new Error('Ticket introuvable.');
+        if(body.action==='fix'){row.status=body.status;row.fixedVersion=body.fixedVersion;row.comment=body.comment;row.resolvedAt=now}
+        if(body.action==='reopen'){row.status='todo';row.fixedVersion='';row.comment='';row.resolvedAt=''}
+      }
+      localWrite(rows);return;
+    }
+    var r=await fetch(CONFIG.API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)});
+    var j=await r.json();
+    if(j.error)throw new Error(j.error);
+  }
+  function apply(rows){
+    var sig=JSON.stringify(rows);
+    if(sig===st.sig&&st.loaded)return false;
+    st.sig=sig;
+    st.tickets=rows.map(function(r){return{id:r.id,title:r.title,severity:r.severity,version:r.version,remark:r.remark,authorId:r.authorId,createdAt:toMs(r.createdAt)}});
+    var m={};
+    rows.forEach(function(r){
+      if(r.status==='en_cours'||r.status==='corrige')m[r.id]={status:r.status,fixedVersion:r.fixedVersion||'',comment:r.comment||'',resolvedAt:toMs(r.resolvedAt)};
+    });
+    st.fixes=m;st.loaded=true;st.error='';
+    return true;
+  }
+  async function refresh(force){
+    try{
+      var rows=await apiList();
+      if(apply(rows)||force){renderTabs();renderList()}
+    }catch(x){
+      if(!st.loaded){st.error=errText(x);renderList()}
+    }
+  }
+  function errText(x){
+    var m=x&&x.message||'';
+    if(/Failed to fetch|NetworkError|Load failed/i.test(m))return 'Connexion impossible au suivi des tickets. Vérifiez votre réseau, puis réessayez.';
+    return m||'L\'enregistrement a échoué. Réessayez.';
+  }
+
+  /* ---------- état dérivé ---------- */
+  function statusOf(t){var f=st.fixes[t.id];return f&&f.status?f.status:'todo'}
+  function sorted(){return st.tickets.slice().sort(function(a,b){return (a.createdAt||0)-(b.createdAt||0)})}
+  function isMine(t){return st.me.id&&t.authorId===st.me.id}
+  function isFresh(t){var f=st.fixes[t.id];return !!(f&&f.resolvedAt&&isMine(t)&&f.resolvedAt>st.seen)}
+  function numbers(){var m={};sorted().forEach(function(t,i){m[t.id]=i+1});return m}
+
+  /* ---------- rendu ---------- */
+  function renderBanner(){
+    var fresh=st.tickets.filter(isFresh).length;
+    var todo=st.tickets.filter(function(t){return statusOf(t)==='todo'}).length;
+    var b=$('banner');
+    if(fresh){
+      $('bannerText').textContent=fresh===1?'Un de vos tickets a été traité depuis votre dernière visite.':fresh+' de vos tickets ont été traités depuis votre dernière visite.';
+      $('bannerBtn').hidden=false;b.hidden=false;
+    }else if(todo){
+      $('bannerText').textContent=todo===1?'1 ticket attend une réponse.':todo+' tickets attendent une réponse.';
+      $('bannerBtn').hidden=true;b.hidden=false;
+    }else b.hidden=true;
+  }
+  function renderTabs(){
+    var c={all:0,todo:0,corrige:0};
+    st.tickets.forEach(function(t){
+      if(st.mine&&!isMine(t))return;
+      c.all++;var s=statusOf(t);
+      if(s==='todo'||s==='en_cours')c.todo++;else c[s]++;
+    });
+    var defs=[['all','Tous',c.all],['todo','À traiter',c.todo],['corrige','Corrigés',c.corrige]];
+    var box=$('tabs');box.textContent='';
+    defs.forEach(function(d){
+      box.appendChild(el('button',{type:'button',class:'tab','aria-pressed':st.filter===d[0]?'true':'false',
+        onclick:function(){st.filter=d[0];renderTabs();renderList()}},d[1],el('span',{class:'n',text:String(d[2])})));
+    });
+  }
+  function visible(t){
+    if(st.mine&&!isMine(t))return false;
+    var s=statusOf(t);
+    if(st.filter==='todo')return s==='todo'||s==='en_cours';
+    if(st.filter==='corrige')return s==='corrige';
+    return true;
+  }
+  function openTeam(id){
+    $('tTicket').value=id;
+    st.pick=id;
+    fillTeamFromTicket();
+    var p=$('teamPanel');
+    var smooth=!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    try{p.scrollIntoView({behavior:smooth?'smooth':'auto',block:'center'})}catch(e){p.scrollIntoView()}
+    $('tVersion').focus({preventScroll:true});
+  }
+  async function reopen(id){
+    try{await apiPost({action:'reopen',id:id});toast('Ticket rouvert');await refresh(true)}
+    catch(x){toast(errText(x))}
+  }
+  function ticketNode(t,n){
+    var s=statusOf(t),f=st.fixes[t.id];
+    var head=el('div',{class:'thead'},
+      el('span',{class:'num',text:'N° '+n}),
+      el('h3',{class:'ttitle',text:t.title||'Sans titre'}),
+      isFresh(t)?el('span',{class:'chip fresh',text:'Nouveau'}):null,
+      el('span',{class:'chip sev-'+t.severity,text:SEV[t.severity]||'Gênant'}),
+      el('span',{class:'chip '+(s==='corrige'?'done':s==='en_cours'?'wip':'todo'),text:GLYPH[s]+' '+STATUS[s]}));
+    var meta=el('p',{class:'meta'},
+      el('span',null,'Version ',el('span',{class:'mono',text:t.version||'non précisée'})),
+      el('span',null,'Signalé le ',el('span',{class:'mono',text:t.createdAt?fmtDateTime(t.createdAt):'—'})));
+    var kids=[head,meta,el('p',{class:'remark',text:t.remark||''})];
+    if(f){
+      var line=f.status==='corrige'?'Corrigé en version '+(f.fixedVersion||'non précisée'):
+               'Pris en charge'+(f.fixedVersion?', version visée '+f.fixedVersion:'');
+      kids.push(el('div',{class:'fix'},
+        el('h3',{text:'Réponse de l\'équipe'}),
+        el('p',{class:'line',text:line+(f.resolvedAt?'  ·  '+fmtDate(f.resolvedAt):'')}),
+        f.comment?el('p',{text:f.comment}):null));
+    }
+    var acts=[el('button',{type:'button',class:'small accent',text:f?'Modifier la réponse':'Répondre',onclick:function(){openTeam(t.id)}})];
+    if(f)acts.push(el('button',{type:'button',class:'small',text:'Rouvrir',onclick:function(){reopen(t.id)}}));
+    kids.push(el('div',{class:'actions'},acts));
+    var li=el('li',{class:'ticket'+(isFresh(t)?' new':'')});
+    kids.forEach(function(k){if(k)li.appendChild(k)});
+    return li;
+  }
+  function renderVersions(){
+    var versions=$('versions');versions.textContent='';
+    var seen={};st.tickets.forEach(function(t){if(t.version)seen[t.version]=1});
+    Object.keys(st.fixes).forEach(function(k){if(st.fixes[k].fixedVersion)seen[st.fixes[k].fixedVersion]=1});
+    Object.keys(seen).sort(function(a,b){return a.localeCompare(b,undefined,{numeric:true})}).forEach(function(v){versions.appendChild(el('option',{value:v}))});
+  }
+  function renderTeamSelect(){
+    var sel=$('tTicket'),keep=sel.value||st.pick,nums=numbers();
+    sel.textContent='';
+    sel.appendChild(el('option',{value:'',text:st.tickets.length?'Choisir un ticket':'Aucun ticket pour l\'instant'}));
+    sorted().reverse().forEach(function(t){
+      var label='N° '+nums[t.id]+' · '+(t.title||'Sans titre')+' · '+STATUS[statusOf(t)];
+      sel.appendChild(el('option',{value:t.id,text:label}));
+    });
+    var still=st.tickets.some(function(t){return t.id===keep});
+    sel.value=still?keep:'';
+    if(!still)st.pick='';
+    $('tReopen').disabled=!(sel.value&&st.fixes[sel.value]);
+  }
+  function fillTeamFromTicket(){
+    var id=$('tTicket').value,f=st.fixes[id];
+    st.pick=id;
+    $('tStatus').value=f&&f.status?f.status:'corrige';
+    $('tVersion').value=f&&f.fixedVersion||'';
+    $('tComment').value=f&&f.comment||'';
+    $('tVersionLabel').textContent=$('tStatus').value==='corrige'?'Version corrigée':'Version visée (facultatif)';
+    $('tReopen').disabled=!(id&&f);
+    showErr('tErr','');
+  }
+  function renderList(){
+    var list=$('list');
+    if(st.error&&!st.loaded){list.textContent='';list.appendChild(el('li',{class:'empty'},el('b',{text:'Les tickets ne sont pas disponibles.'}),st.error));renderTabs();return}
+    if(!st.loaded)return;
+    renderBanner();renderVersions();renderTeamSelect();
+    var all=sorted(),nums=numbers();
+    var shown=all.filter(visible).reverse();
+    list.textContent='';
+    if(!shown.length){
+      list.appendChild(el('li',{class:'empty'},
+        el('b',{text:all.length?'Aucun ticket dans cette vue.':'Aucun ticket pour l\'instant.'}),
+        all.length?'Changez de filtre pour voir les autres.':'Utilisez le formulaire pour signaler le premier problème.'));
+    }else shown.forEach(function(t){list.appendChild(ticketNode(t,nums[t.id]))});
+  }
+
+  /* ---------- formulaires ---------- */
+  function setupForms(){
+    $('fDate').textContent=fmtDate(Date.now());
+    $('tDate').textContent=fmtDate(Date.now());
+    $('newForm').addEventListener('submit',async function(e){
+      e.preventDefault();showErr('fErr','');
+      var title=$('fTitle').value.trim(),version=$('fVersion').value.trim(),remark=$('fRemark').value.trim();
+      if(!title||!version||!remark){showErr('fErr','Renseignez le résumé, la version utilisée et votre remarque.');return}
+      $('fSubmit').disabled=true;
+      try{
+        await apiPost({action:'add',title:title,severity:$('fSev').value,version:version,remark:remark,authorId:st.me.id});
+        $('fTitle').value='';$('fRemark').value='';
+        toast('Ticket envoyé. La réponse apparaîtra sur sa carte.');
+        await refresh(true);
+      }catch(x){showErr('fErr',errText(x))}
+      $('fSubmit').disabled=false;
+    });
+    $('tTicket').addEventListener('change',fillTeamFromTicket);
+    $('tStatus').addEventListener('change',function(){
+      $('tVersionLabel').textContent=$('tStatus').value==='corrige'?'Version corrigée':'Version visée (facultatif)';
+    });
+    $('teamForm').addEventListener('submit',async function(e){
+      e.preventDefault();showErr('tErr','');
+      var id=$('tTicket').value,status=$('tStatus').value,version=$('tVersion').value.trim(),comment=$('tComment').value.trim();
+      if(!id){showErr('tErr','Choisissez le ticket concerné.');return}
+      if(status==='corrige'&&!version){showErr('tErr','Indiquez la version qui contient la correction.');return}
+      $('tSave').disabled=true;
+      try{
+        await apiPost({action:'fix',id:id,status:status,fixedVersion:version,comment:comment});
+        $('tTicket').value='';st.pick='';fillTeamFromTicket();
+        toast('Réponse enregistrée');
+        await refresh(true);
+      }catch(x){showErr('tErr',errText(x))}
+      $('tSave').disabled=false;
+    });
+    $('tReopen').addEventListener('click',function(){var id=$('tTicket').value;if(id)reopen(id)});
+    $('fMine').addEventListener('change',function(e){st.mine=e.target.checked;renderTabs();renderList()});
+    $('bannerBtn').addEventListener('click',function(){
+      st.seen=Date.now();lsSet(SEEN_KEY,String(st.seen));renderBanner();renderList();
+    });
+  }
+
+  /* ---------- démarrage ---------- */
+  function boot(){
+    st.me={id:meId()};
+    var seen=parseInt(lsGet(SEEN_KEY)||'0',10);st.seen=isNaN(seen)?0:seen;
+    setupForms();renderTabs();
+    if(!REMOTE){
+      $('noWrite').textContent='Mode démonstration : les tickets restent dans ce navigateur et ne sont pas partagés. Pour les partager, renseignez l\'adresse du script Google (CONFIG.API_URL) en haut du fichier.';
+      $('noWrite').hidden=false;
+    }
+    refresh(true);
+    setInterval(function(){if(!document.hidden)refresh(false)},20000);
+    document.addEventListener('visibilitychange',function(){if(!document.hidden)refresh(false)});
+  }
+  boot();
+})();
+</script>
+</body>
+</html>
